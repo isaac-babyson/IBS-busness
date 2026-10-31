@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2b2d8f">
+<title>IBS Chat Business</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+:root{--bg:#f2f0f9;--panel:#fff;--ink:#1d1b3a;--mute:#6b6890;--brand:#2b2d8f;--acc:#f5a623;--out:#dedcff;--in:#fff;--line:#e3e0f2}
+@media (prefers-color-scheme:dark){:root{--bg:#13122a;--panel:#1c1b3a;--ink:#ecebff;--mute:#9a97c4;--brand:#8c8fff;--out:#34337a;--in:#25244d;--line:#2d2c58}}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+#app{display:none;height:100%;max-width:1100px;margin:0 auto;background:var(--panel)}
+#side{width:340px;border-right:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+#main{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
+header{padding:12px 14px;display:flex;align-items:center;gap:10px;background:var(--brand);color:#fff}
+header h1{font-size:19px;margin:0;font-weight:800;flex:1}header h1 small{font-weight:400;opacity:.75;font-size:12px;margin-left:4px}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:8px 12px;background:var(--acc);color:#2a1d00;font-weight:600}
+button.ghost{background:transparent;color:inherit;border:1px solid currentColor;padding:5px 9px;font-size:12px}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--acc);outline-offset:1px}
+#tabs{display:flex;border-bottom:1px solid var(--line)}
+#tabs button{flex:1;background:none;color:var(--mute);border-radius:0;padding:10px 4px;border-bottom:3px solid transparent}
+#tabs button.on{color:var(--brand);border-color:var(--acc)}
+#list{overflow:auto;flex:1}
+.row{display:flex;gap:11px;padding:11px 14px;border-bottom:1px solid var(--line);cursor:pointer;align-items:center}
+.row:hover,.row.on{background:var(--bg)}
+.av{width:42px;height:42px;border-radius:50%;background:var(--brand);color:var(--panel);display:grid;place-items:center;font-weight:800;flex:none}
+.lite .av{display:none}
+.row b{display:block}.row span{color:var(--mute);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.row div{min-width:0;flex:1}
+#bar{padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}
+#bar b{flex:1}#back{display:none}
+#msgs{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:6px}
+.m{max-width:78%;padding:8px 11px;border-radius:14px;background:var(--in);word-wrap:break-word}
+.m.me{align-self:flex-end;background:var(--out)}
+.m i{display:block;font-size:11px;color:var(--mute);text-align:right;font-style:normal}
+.m audio{display:block;max-width:100%;height:36px}
+.play{background:var(--bg);color:var(--ink);border:1px solid var(--line)}
+#quick{display:flex;gap:6px;padding:6px 12px;overflow-x:auto;background:var(--panel)}
+#quick button{background:var(--bg);color:var(--ink);border:1px solid var(--line);white-space:nowrap;font-size:13px;padding:5px 10px}
+#send{display:flex;gap:8px;padding:10px;background:var(--panel)}
+#send input{flex:1;min-width:0;padding:11px 14px;border-radius:22px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+#mic{background:var(--brand);color:var(--panel);padding:8px 13px}#mic.rec{background:#c62828;color:#fff}
+.pane{padding:16px;overflow:auto}
+.pane label{display:block;margin:12px 0 4px;font-weight:600}
+input.f,textarea.f{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+.card{border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.empty{color:var(--mute);padding:30px;text-align:center}
+#auth{max-width:380px;margin:0 auto;padding:30px 20px}
+#auth h1{color:var(--brand);margin:0 0 4px;font-size:30px}
+#auth .f{margin:6px 0}
+#auth button{width:100%;margin-top:10px;padding:11px}
+#auth .link{background:none;color:var(--brand);text-decoration:underline;font-weight:400}
+#err{color:#c62828;min-height:20px;margin-top:8px}
+/* badge bleu */.vb{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:#1d9bf0;color:#fff;font-size:11px;margin-left:5px;vertical-align:middle;font-weight:700}
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:8px 14px;border-radius:10px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%;text-align:center}
+@media(max-width:700px){#side{width:100%}#main{display:none}.chat #side{display:none}.chat #main{display:flex}#back{display:inline-block}}
+</style>
+</head>
+<body>
+
+<div id="auth">
+ <h1>IBS Chat</h1>
+ <p style="color:var(--mute);margin-top:0">Messagerie Business : texte et vocal.</p>
+ <div id="cfg" style="display:none;border:1px solid var(--acc);border-radius:10px;padding:12px;margin-bottom:12px">Configuration manquante. Ouvrez le fichier <b>index.html</b> et remplissez <b>SUPABASE_URL</b> et <b>SUPABASE_KEY</b> en haut du script (voir LISEZMOI.txt).</div>
+ <input class="f" id="nm" placeholder="Votre nom (affiché à vos contacts)" maxlength="40" style="display:none" autocomplete="name">
+ <input class="f" id="u" type="tel" inputmode="tel" placeholder="Numéro de téléphone (ex. 0840981930)" autocomplete="tel">
+ <input class="f" id="p" type="password" placeholder="Mot de passe (6 caractères minimum)" autocomplete="current-password">
+ <button id="go1">Se connecter</button>
+ <button class="link" id="sw">Pas de compte ? Créer un compte</button>
+ <p style="color:var(--mute);font-size:13px;margin:8px 0 0">Votre numéro de téléphone sert d’identifiant : 0840981930 ou +243840981930.</p>
+ <div id="err" role="alert"></div>
+</div>
+
+<div id="app">
+ <aside id="side">
+  <header><h1>IBS Chat<small>Business</small></h1><button class="ghost" id="litebtn">Mode basique</button></header>
+  <nav id="tabs"><button class="on" data-t="chats">Discussions</button><button data-t="cat">Catalogue</button><button data-t="biz">Outils Pro</button></nav>
+  <div id="list"></div>
+ </aside>
+ <section id="main"></section>
+</div>
+<div id="toast"></div>
+
+<script>
+/* ====== À REMPLIR (voir LISEZMOI.txt) ====== */
+const SUPABASE_URL = 'https://mstcpooicfhiddnsumfh.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_g9cDZ7Tg8azf_6dxAWZsiw_efh19ZSY';
+/* =========================================== */
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ls={get(k,d){try{const v=localStorage.getItem('ibs_'+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem('ibs_'+k,JSON.stringify(v))}catch(e){}}};
+const L={lite:ls.get('lite',false),data:ls.get('data',0),
+ quick:ls.get('quick',[{k:'/prix',t:'Nos prix sont dans le catalogue. Souhaitez-vous commander ?'},{k:'/merci',t:'Merci pour votre confiance !'},{k:'/horaires',t:'Nous sommes ouverts du lundi au samedi, 8h–18h.'}]),
+ cat:ls.get('cat',[{n:'Forfait Starter',p:'5 000 FC'},{n:'Forfait Pro',p:'15 000 FC'}])};
+const saveL=()=>{['lite','data','quick','cat'].forEach(k=>ls.set(k,L[k]))};
+const hhmm=d=>new Date(d||Date.now()).toTimeString().slice(0,5);
+function toast(t){const e=$('#toast');e.textContent=t;e.style.opacity=1;clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.opacity=0,2400)}
+function addData(n){L.data+=n;saveL()}
+
+if(SUPABASE_URL.includes('COLLEZ')){$('#cfg').style.display='block'}
+const sb=SUPABASE_URL.includes('COLLEZ')?null:supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let me=null,myName='',peer=null,convos=[],msgs=[],tab='chats',names={},ver={},signup=false,chan=null;
+const badge=id=>ver[id]?'<span class="vb" title="Compte vérifié">✔</span>':'';
+const mail=u=>u+'@ibschat.app';
+function phoneNorm(v){let d=String(v).replace(/[^\d+]/g,'');if(d[0]==='+')d=d.slice(1);else if(d.startsWith('00'))d=d.slice(2);else if(d[0]==='0')d='243'+d.slice(1);else if(/^\d{9}$/.test(d))d='243'+d;return /^\d{8,15}$/.test(d)?d:''}
+function prefixNorm(v){let d=String(v).replace(/[^\d+]/g,'');if(d[0]==='+')return d.slice(1);if(d.startsWith('00'))return d.slice(2);if(d[0]==='0')return '243'+d.slice(1);return d}
+const label=p=>p.display_name||('+'+p.username);
+const ini=n=>(String(n).replace(/^\+/,'')[0]||'?').toUpperCase();
+
+/* ---------- Connexion ---------- */
+$('#sw').onclick=()=>{signup=!signup;$('#nm').style.display=signup?'block':'none';$('#go1').textContent=signup?'Créer mon compte':'Se connecter';$('#sw').textContent=signup?'J’ai déjà un compte':'Pas de compte ? Créer un compte';$('#err').textContent=''};
+$('#go1').onclick=async()=>{
+ if(!sb)return;const u=phoneNorm($('#u').value),p=$('#p').value,nm=$('#nm').value.trim();$('#err').textContent='';
+ if(!u)return $('#err').textContent='Numéro invalide. Exemple : 0840981930 ou +243840981930.';
+ if(signup&&!nm)return $('#err').textContent='Entrez votre nom.';
+ if(p.length<6)return $('#err').textContent='Le mot de passe doit avoir au moins 6 caractères.';
+ const r=signup?await sb.auth.signUp({email:mail(u),password:p,options:{data:{username:u,name:nm}}}):await sb.auth.signInWithPassword({email:mail(u),password:p});
+ if(r.error)return $('#err').textContent=r.error.message.includes('already')?'Ce numéro est déjà inscrit.':r.error.message.includes('Invalid login')?'Numéro ou mot de passe incorrect.':r.error.message;
+ if(!r.data.session)return $('#err').textContent='Compte créé, mais la confirmation e-mail est encore active dans Supabase (voir LISEZMOI.txt).';
+ start(r.data.session.user);
+};
+async function boot(){if(!sb)return;const {data}=await sb.auth.getSession();if(data.session)start(data.session.user)}
+
+async function start(user){
+ me=user;myName=user.user_metadata?.name||('+'+(user.user_metadata?.username||''));names[me.id]=myName;
+ const {data:mp}=await sb.from('profiles').select('verified').eq('id',me.id).maybeSingle();ver[me.id]=!!mp?.verified;
+ $('#auth').style.display='none';$('#app').style.display='flex';lite();
+ if(chan)sb.removeChannel(chan);
+ chan=sb.channel('inbox-'+me.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:'receiver=eq.'+me.id},p=>onMsg(p.new)).subscribe();
+ await loadConvos();render();
+}
+
+/* ---------- Données ---------- */
+async function nameOf(id){if(names[id])return names[id];const {data}=await sb.from('profiles').select('username,display_name,verified').eq('id',id).maybeSingle();ver[id]=!!data?.verified;return names[id]=data?label(data):'inconnu'}
+async function loadConvos(){
+ const {data}=await sb.from('messages').select('*').or(`sender.eq.${me.id},receiver.eq.${me.id}`).order('created_at',{ascending:false}).limit(300);
+ const map=new Map();for(const m of data||[]){const o=m.sender===me.id?m.receiver:m.sender;if(!map.has(o))map.set(o,m)}
+ const ids=[...map.keys()];const miss=ids.filter(i=>!names[i]);
+ if(miss.length){const {data:ps}=await sb.from('profiles').select('id,username,display_name,verified').in('id',miss);(ps||[]).forEach(p=>{names[p.id]=label(p);ver[p.id]=!!p.verified})}
+ convos=ids.map(id=>({id,name:names[id]||'inconnu',last:map.get(id)}));
+}
+async function onMsg(m){
+ addData((m.body||'').length+200);const n=await nameOf(m.sender);
+ if(peer&&peer.id===m.sender){msgs.push(m);draw()}else toast('Nouveau message de '+n);
+ await loadConvos();if(tab==='chats')render();
+}
+
+/* ---------- Interface ---------- */
+function lite(){document.body.classList.toggle('lite',L.lite);const b=$('#litebtn');b.style.background=L.lite?'var(--acc)':'';b.style.color=L.lite?'#2a1d00':''}
+$('#litebtn').onclick=()=>{L.lite=!L.lite;saveL();lite();toast(L.lite?'Mode basique : voix compressée, moins de données':'Mode complet');if(peer)openChat(peer)};
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));render()});
+
+function preview(m){return m?(m.audio_path?'🎤 Message vocal':esc(m.body)):''}
+function render(){
+ const Ls=$('#list');
+ if(tab==='chats'){
+  Ls.innerHTML=`<div class="pane" style="padding:10px 14px"><input class="f" id="q" placeholder="Trouver quelqu’un (numéro ou nom)"><div id="res"></div></div>`+
+   (convos.length?convos.map(c=>`<div class="row ${peer&&peer.id===c.id?'on':''}" data-id="${c.id}"><div class="av">${ini(c.name)}</div><div><b>${esc(c.name)}${badge(c.id)}</b><span>${preview(c.last)}</span></div></div>`).join(''):`<div class="empty">Aucune discussion. Cherchez un numéro ou un nom ci-dessus pour écrire à quelqu’un.</div>`);
+  Ls.querySelectorAll('.row').forEach(r=>r.onclick=()=>openChat({id:r.dataset.id,name:names[r.dataset.id]}));
+  $('#q').oninput=async e=>{const raw=e.target.value.trim();if(raw.length<2){$('#res').innerHTML='';return}
+   const num=/^[\d+\s]+$/.test(raw);let q=sb.from('profiles').select('id,username,display_name,verified').neq('id',me.id).limit(6);
+   q=num?q.ilike('username',prefixNorm(raw)+'%'):q.ilike('display_name','%'+raw.replace(/[%,()]/g,'')+'%');
+   const {data}=await q;
+   $('#res').innerHTML=(data||[]).map(p=>{names[p.id]=label(p);ver[p.id]=!!p.verified;return `<div class="row" data-id="${p.id}"><div class="av">${ini(names[p.id])}</div><div><b>${esc(names[p.id])}${badge(p.id)}</b><span>Démarrer une discussion</span></div></div>`}).join('')||'<div class="empty" style="padding:8px">Personne trouvé.</div>';
+   $('#res').querySelectorAll('.row').forEach(r=>r.onclick=()=>openChat({id:r.dataset.id,name:names[r.dataset.id]}))};
+  if(!peer)$('#main').innerHTML='<div class="empty" style="margin:auto">Choisissez une discussion pour commencer.</div>';
+ }
+ if(tab==='cat'){
+  Ls.innerHTML=`<div class="pane">`+L.cat.map((p,i)=>`<div class="card"><div><b>${esc(p.n)}</b><br><span style="color:var(--mute)">${esc(p.p)}</span></div><button data-i="${i}">Envoyer</button></div>`).join('')+`<label>Nouveau produit</label><input class="f" id="pn" placeholder="Nom du produit"><input class="f" id="pp" placeholder="Prix" style="margin-top:6px"><button id="addp" style="margin-top:8px">Ajouter au catalogue</button></div>`;
+  Ls.querySelectorAll('.card button').forEach(b=>b.onclick=()=>{const p=L.cat[+b.dataset.i];if(!peer)return toast('Ouvrez d’abord une discussion');sendText(`${p.n} — ${p.p}`)});
+  $('#addp').onclick=()=>{const n=$('#pn').value.trim();if(n){L.cat.push({n,p:$('#pp').value||'—'});saveL();render()}};
+ }
+ if(tab==='biz'){
+  Ls.innerHTML=`<div class="pane"><div class="card"><div><b>Connecté : ${esc(myName)}${badge(me.id)}</b></div><button class="ghost" id="out" style="color:var(--brand)">Déconnexion</button></div>
+  <div class="card"><div><b>Historique de l’application</b><br><span style="color:var(--mute)">À propos d’IBS Chat et de son créateur</span></div><button id="hist">Ouvrir</button></div>
+  <label>Réponses rapides (tapez / dans un message)</label>`+L.quick.map(q=>`<div class="card"><div><b>${esc(q.k)}</b><br><span style="color:var(--mute)">${esc(q.t)}</span></div></div>`).join('')+`<input class="f" id="qk" placeholder="/raccourci"><input class="f" id="qt" placeholder="Texte de la réponse" style="margin-top:6px"><button id="addq" style="margin-top:8px">Ajouter</button>
+  <label>Données utilisées par IBS Chat (estimation)</label><div class="card"><b>${(L.data/1024).toFixed(1)} Ko</b><span style="color:var(--mute)">${L.lite?'Mode basique':'Mode complet'}</span></div></div>`;
+  $('#out').onclick=async()=>{await sb.auth.signOut();location.reload()};$('#hist').onclick=showHistory;
+  $('#addq').onclick=()=>{let k=$('#qk').value.trim(),t=$('#qt').value.trim();if(k&&t){if(k[0]!=='/')k='/'+k;L.quick.push({k,t});saveL();render()}};
+ }
+}
+
+async function openChat(p){
+ peer={id:p.id,name:p.name||await nameOf(p.id)};document.body.classList.add('chat');
+ $('#main').innerHTML=`<div id="bar"><button class="ghost" id="back" style="color:var(--ink)">←</button><div class="av">${ini(peer.name)}</div><b>${esc(peer.name)}${badge(peer.id)}</b></div><div id="msgs"></div><div id="quick"></div><div id="send"><input id="inp" placeholder="Écrire un message (ou /prix)" autocomplete="off"><button id="mic" title="Message vocal" aria-label="Message vocal">🎤</button><button id="go">Envoyer</button></div>`;
+ $('#back').onclick=()=>{document.body.classList.remove('chat');peer=null;render()};
+ $('#go').onclick=()=>sendText($('#inp').value);$('#mic').onclick=toggleRec;
+ $('#inp').onkeydown=e=>{if(e.key==='Enter')sendText(e.target.value)};
+ $('#inp').oninput=e=>{const v=e.target.value,qs=v.startsWith('/')?L.quick.filter(q=>q.k.startsWith(v)):[];$('#quick').innerHTML=qs.map((q,i)=>`<button data-k="${i}">${esc(q.k)}</button>`).join('');
+  $('#quick').querySelectorAll('button').forEach(b=>b.onclick=()=>{$('#inp').value=qs[+b.dataset.k].t;$('#quick').innerHTML=''})};
+ const f=`and(sender.eq.${me.id},receiver.eq.${peer.id}),and(sender.eq.${peer.id},receiver.eq.${me.id})`;
+ const {data,error}=await sb.from('messages').select('*').or(f).order('created_at',{ascending:false}).limit(L.lite?30:100);
+ if(error)toast('Chargement impossible : '+error.message);
+ msgs=(data||[]).reverse();addData(msgs.length*(L.lite?60:200));draw();render();
+}
+function draw(){
+ const M=$('#msgs');if(!M)return;
+ M.innerHTML=msgs.map(m=>`<div class="m ${m.sender===me.id?'me':''}">${m.audio_path?`<button class="play" data-p="${esc(m.audio_path)}">▶ Écouter le vocal (${m.audio_secs||'?'} s)</button>`:esc(m.body)}<i>${hhmm(m.created_at)}</i></div>`).join('')||'<div class="empty">Écrivez le premier message.</div>';
+ M.querySelectorAll('.play').forEach(b=>b.onclick=async()=>{b.textContent='Chargement…';const {data,error}=await sb.storage.from('voices').createSignedUrl(b.dataset.p,3600);
+  if(error)return b.textContent='Vocal indisponible';const a=document.createElement('audio');a.controls=true;a.src=data.signedUrl;b.replaceWith(a);a.play().catch(()=>{});addData(L.lite?8000:30000)});
+ M.scrollTop=M.scrollHeight;
+}
+
+/* ---------- Historique de l'application ---------- */
+function showHistory(){
+ peer=null;document.body.classList.add('chat');
+ $('#main').innerHTML=`<div id="bar"><button class="ghost" id="back" style="color:var(--ink)">←</button><b>Historique de l’application</b></div><div class="pane" style="flex:1;overflow:auto;background:var(--panel)">
+ <h2 style="margin:0 0 6px;color:var(--brand)">IBS Chat Business</h2>
+ <p>Messagerie professionnelle avec messages texte et vocaux, catalogue, réponses rapides et un mode basique qui économise les données.</p>
+ <h3>Le créateur</h3>
+ <p><b>ISAAC BABYSON GUY</b> <span class="vb" title="Compte vérifié">✔</span></p>
+ <p>Né à Nyamilima et grandi à Kiseguro, il a étudié à l’EP Kiseguro, puis à l’INSTKIS (Kiseguro).</p>
+ <p>Il est né dans une famille pastorale : son père est Kayenga Kingamilubo et sa mère Maniriho Mahoro. Il est le fils aîné de trois garçons : Isaac Babyson, Ahadi et Daniel.</p>
+ <p>Territoire de Rutshuru, province du Nord-Kivu, République démocratique du Congo.</p>
+ <p>Contact : <b>0840981930</b></p></div>`;
+ $('#back').onclick=()=>{document.body.classList.remove('chat');render()};
+}
+
+/* ---------- Envoi texte ---------- */
+async function sendText(t){
+ t=(t||'').trim();if(!t||!peer)return;
+ const {data,error}=await sb.from('messages').insert({sender:me.id,receiver:peer.id,body:t}).select().single();
+ if(error)return toast('Envoi impossible : '+error.message);
+ if($('#inp'))$('#inp').value='';if($('#quick'))$('#quick').innerHTML='';
+ addData(t.length+200);msgs.push(data);draw();await loadConvos();if(tab==='chats')render();
+}
+
+/* ---------- Vocal ---------- */
+let rec=null,chunks=[],t0=0,timer=null;
+async function toggleRec(){
+ if(rec){rec.stop();return}
+ if(!peer)return;
+ if(!navigator.mediaDevices||!window.MediaRecorder)return toast('Le micro n’est pas pris en charge par ce navigateur');
+ try{
+  const st=await navigator.mediaDevices.getUserMedia({audio:true});const to=peer;
+  rec=new MediaRecorder(st,{audioBitsPerSecond:L.lite?8000:32000});chunks=[];t0=Date.now();
+  rec.ondataavailable=e=>chunks.push(e.data);
+  rec.onstop=()=>{st.getTracks().forEach(x=>x.stop());clearTimeout(timer);const b=$('#mic');if(b){b.textContent='🎤';b.classList.remove('rec')}
+   const blob=new Blob(chunks,{type:rec.mimeType});rec=null;const secs=Math.round((Date.now()-t0)/1000);
+   if(secs<1)return toast('Message vocal trop court');sendVoice(to,blob,secs)};
+  rec.start();$('#mic').textContent='⏹';$('#mic').classList.add('rec');
+  toast(L.lite?'Enregistrement (60 s max). Touchez ⏹ pour envoyer':'Enregistrement (3 min max). Touchez ⏹ pour envoyer');
+  timer=setTimeout(()=>rec&&rec.stop(),(L.lite?60:180)*1000);
+ }catch(e){rec=null;toast('Micro refusé ou indisponible. Autorisez le micro dans le navigateur.')}
+}
+async function sendVoice(to,blob,secs){
+ const type=(blob.type||'audio/webm').split(';')[0],ext=type.includes('mp4')?'m4a':type.includes('ogg')?'ogg':'webm';
+ const path=`${me.id}/${Date.now()}.${ext}`;
+ const up=await sb.storage.from('voices').upload(path,blob,{contentType:type});
+ if(up.error)return toast('Envoi du vocal impossible : '+up.error.message);
+ const {data,error}=await sb.from('messages').insert({sender:me.id,receiver:to.id,audio_path:path,audio_secs:secs}).select().single();
+ if(error)return toast('Envoi impossible : '+error.message);
+ addData(blob.size);if(peer&&peer.id===to.id){msgs.push(data);draw()}await loadConvos();if(tab==='chats')render();
+}
+
+boot();
+if('serviceWorker' in navigator&&location.protocol==='https:'){/* PWA : à ajouter plus tard */}
+</script>
+</body>
+</html>

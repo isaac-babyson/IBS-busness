@@ -1,0 +1,59 @@
+IBS CHAT : METTRE L'APPLICATION EN LIGNE GRATUITEMENT
+=====================================================
+
+Vous avez 3 fichiers :
+  index.html   l'application
+  schema.sql   la base de données à créer
+  LISEZMOI.txt ce guide
+
+ÉTAPE 1. Créer le serveur gratuit (Supabase)
+  1. Allez sur supabase.com, créez un compte gratuit.
+  2. Cliquez "New project". Donnez un nom (ex. ibs-chat) et un mot de passe
+     de base de données (notez-le). Choisissez la région la plus proche
+     de vos utilisateurs. Attendez 1 à 2 minutes.
+
+ÉTAPE 2. Créer les tables
+  1. Dans Supabase, menu de gauche : "SQL Editor", puis "New query".
+  2. Ouvrez schema.sql avec le Bloc-notes, copiez tout, collez dans Supabase.
+  3. Cliquez "Run". Le message "Success" doit apparaître.
+
+ÉTAPE 3. Désactiver la confirmation par e-mail
+  (Les comptes se créent avec un nom d'utilisateur, sans vrai e-mail.)
+  1. Menu "Authentication", puis "Sign In / Providers" (ou "Providers"), puis "Email".
+  2. Désactivez "Confirm email". Enregistrez.
+
+ÉTAPE 4. Relier l'application à votre serveur
+  1. Menu "Project Settings", puis "API" (ou "Data API").
+  2. Copiez "Project URL" et la clé "anon public" (parfois nommée "publishable").
+  3. Ouvrez index.html avec le Bloc-notes. En haut du script, remplacez :
+       SUPABASE_URL = 'COLLEZ_ICI_VOTRE_PROJECT_URL'
+       SUPABASE_KEY = 'COLLEZ_ICI_VOTRE_ANON_PUBLIC_KEY'
+     en gardant les apostrophes. Enregistrez.
+  IMPORTANT : n'utilisez jamais la clé "service_role" dans l'application.
+
+ÉTAPE 5. Mettre l'application en ligne (gratuit)
+  Option simple : allez sur app.netlify.com/drop, puis glissez le DOSSIER
+  contenant index.html. Vous recevez un lien à partager. Vérifiez les
+  conditions gratuites actuelles du service.
+  Alternatives : Cloudflare Pages, GitHub Pages.
+
+ÉTAPE 6. Tester
+  Ouvrez le lien sur deux téléphones, créez deux comptes, cherchez l'autre
+  nom d'utilisateur, envoyez un texte puis un vocal. Sur téléphone,
+  ajoutez la page à l'écran d'accueil depuis le menu du navigateur.
+
+À SAVOIR
+  - Il n'y a pas de "mot de passe oublié" : sans e-mail ni SMS, il n'est pas
+    possible de le récupérer. Conseillez aux utilisateurs de le noter.
+  - L'offre gratuite de Supabase met le projet en pause après environ une
+    semaine sans activité. Dans ce cas, rouvrez le projet depuis le
+    tableau de bord pour le relancer.
+  - Les vocaux sont stockés dans un espace privé, lisibles seulement par
+    des utilisateurs connectés. Les messages texte ne sont visibles que par
+    l'expéditeur et le destinataire. Les messages ne sont pas chiffrés de
+    bout en bout comme sur WhatsApp.
+  - Ce code n'a pas pu être testé sur un vrai serveur Supabase pendant sa
+    création. Si une étape échoue, copiez le message d'erreur et
+    renvoyez-le-moi : je le corrigerai.
+  - Le catalogue, les réponses rapides et le mode basique sont enregistrés
+    sur l'appareil de chaque utilisateur, pas sur le serveur.
